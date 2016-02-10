@@ -10,6 +10,17 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
             "Cannot connect on { $!host }:{ $!port } : { $!error }";
         }
     }
+
+    class X::Command is Exception {
+        has $.error is required;
+
+        method message() {
+            my $e = $!error.subst(/'ERROR: '/,'');
+            "Got error from server : '$e'";
+        }
+
+    }
+
     sub check-liquidsoap(Int $port = 1234, Str $host = 'localhost') returns Bool is export {
         my $rc = True;
         CATCH {
@@ -65,6 +76,9 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
                 $out ~= $l;
             }
             self.close;
+            if $out ~~ /^^ERROR:/ {
+                X::Command.new(error => $out).throw;
+            }
             $out;
         }
     }
