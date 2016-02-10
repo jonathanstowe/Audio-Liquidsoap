@@ -53,9 +53,29 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         $!client.command($command, @args);
     }
 
-    method uptime() {
+    method uptime() returns Duration {
+        multi sub get-secs(Str $s) returns Duration {
+	        my regex uptime {
+		        $<day>=[\d+]d\s+$<hour>=[\d+]h\s+$<minute>=[\d+]m\s+$<second>=[\d+]s
+	        }
+	
+	        if $s ~~ /<uptime>/ {
+		        get-secs($/<uptime>);
+	        }
+	        else {
+		        fail "Incorrect format";
+	        }
+        }
+
+        multi sub get-secs(Match $s) returns Duration {
+	        my $secs = ($s<day>.Int * 86400) + ($s<hour>.Int * 3600) + ( $s<minute>.Int * 60) + $s<second>.Int;
+	        Duration.new($secs);	
+        }
+
         my $u = self.command("uptime");
+        get-secs($u);
     }
+
     method version() returns Version {
         my $v = self.command("version");
         Version.new($v.split(/\s+/)[1]);
