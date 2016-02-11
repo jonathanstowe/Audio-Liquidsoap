@@ -61,7 +61,7 @@ if try RunServer.new(port => $port, script => 't/data/request.liq') -> $ls {
     nok $soap.outputs<dummy-output>.autostart, "and it says so too";
     ok do { $soap.outputs<dummy-output>.autostart = True }, "set autostart back on 'on' again";
     isa-ok $soap.outputs<dummy-output>.remaining, Duration, "and remaining is a Duration";
-    isa-ok $soap.outputs<dummy-output>.metadata, Audio::Liquidsoap::Metadata, "metadata returns the right thing";
+    isa-ok $soap.outputs<dummy-output>.metadata[0], Audio::Liquidsoap::Metadata, "metadata returns the right thing";
 
 
     LEAVE {

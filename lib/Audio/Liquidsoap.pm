@@ -283,7 +283,7 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
             my ( $key, $value ) = $line.split('=',2);
             # Awful
             $key.subst-mutate('_', '-');
-            $value.subst-mutate('"', '', :g);
+            $value.subst-mutate('"', '', :g) if $value.defined;
             $value = do given $key {
                 when 'on-air' {
                     DateTime.new($value.trans('/' => '-', ' ' => 'T'));
@@ -329,19 +329,17 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         method !metadata() is command('metadata') { * }
 
         method metadata() {
-            my %meta;
-            my Bool $seen = False;
-            for self!metadata.lines -> $line {
-                if $line ~~ /^'---'/ {
-                    last if $seen;
-                    $seen = True;
-                    next;
+            my @metas;
+            for self!metadata.split(/^^'--- '\d+' ---'\s*$$/,:skip-empty) -> $metadata {
+                my %meta;
+                for $metadata.lines -> $line {
+                    # Moved the awful code to a subroutine
+                    my ( $key, $value ) = get-metadata-pair($line);
+                    %meta{$key} = $value;
                 }
-                # Moved the awful code to a subroutine
-                my ( $key, $value ) = get-metadata-pair($line);
-                %meta{$key} = $value;
+                @metas.append: Metadata.new(|%meta);
             }
-            Metadata.new(|%meta);
+            @metas.reverse;
         }
     }
 
