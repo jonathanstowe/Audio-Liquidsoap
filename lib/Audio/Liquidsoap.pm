@@ -278,28 +278,35 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         | dummy-output.status
         | dummy-output.stop
         =end note
+
+        multi sub meta-value(Str $key, Str:D $value) {
+            $value.subst('"', '', :g)
+        }
+
+        multi sub meta-value('on-air', Str:D $value) {
+            DateTime.new(samewith(Str,$value).trans('/' => '-', ' ' => 'T'))
+        }
+        multi sub meta-value('temporary', Str:D $value) {
+            samewith(Str, $value) eq 'true';
+        }
+        multi sub meta-value('rid', Str:D $value ) {
+            Int(samewith(Str, $value));
+        }
+
+        multi sub meta-key(Str $key) {
+            $key.subst('_', '-');
+        }
         
         sub get-metadata-pair(Str $line) {
             my ( $key, $value ) = $line.split('=',2);
-            # Awful
-            $key.subst-mutate('_', '-');
-            $value.subst-mutate('"', '', :g) if $value.defined;
-            $value = do given $key {
-                when 'on-air' {
-                    DateTime.new($value.trans('/' => '-', ' ' => 'T'));
-                }
-                when 'temporary' {
-                    $value eq 'true';
-                }
-                when 'rid' {
-                    Int($value);
-                }
-                default {
-                    $value;
-                }
-
+            if $key && $value {
+                $key   = meta-key($key);
+                $value = meta-value($key, $value);
+                $key, $value;
             }
-            $key, $value;
+            else {
+                Empty;
+            }
         }
 
         method start() is command('start') { * }
@@ -334,12 +341,15 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
                 my %meta;
                 for $metadata.lines -> $line {
                     # Moved the awful code to a subroutine
-                    my ( $key, $value ) = get-metadata-pair($line);
-                    %meta{$key} = $value;
+                    if my ( $key, $value) = get-metadata-pair($line) {
+                        if $key {
+                            %meta{$key} = $value;
+                        }
+                    }
                 }
                 @metas.append: Metadata.new(|%meta);
             }
-            @metas.reverse;
+            @metas.sort(-> $v { $v.rid });
         }
     }
 
