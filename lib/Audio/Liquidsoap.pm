@@ -33,6 +33,7 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
 
         $rc;
     }
+
     class Client {
         has Int $.port  = 1234;
         has Str $.host  = 'localhost';
@@ -122,5 +123,102 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         Version.new($v.split(/\s+/)[1]);
     }
 
+    method list() {
+        my $list = self.command('list');
+        $list.lines;
+    }
+
+    has %!vars;
+
+    method get-vars() {
+        my $vars = self.command("var.list");
+        my %vars;
+        for $vars.lines -> $var {
+            my ( $name, $type ) = $var.split(/\s+\:\s+/);
+            %vars{$name} = do given $type {
+                when 'bool' {
+                    Bool
+                }
+                when 'string' {
+                    Str
+                }
+                when 'float' {
+                    Numeric
+                }
+                default {
+                    die "unrecognised type '$_' found in vars";
+                }
+            }
+
+
+        }
+        %vars;
+    }
+
+
+    class X::NoVar is Exception {
+        has $.name is required;
+        method message() returns Str {
+            "Variable '{ $!name }' does not exist";
+        }
+    }
+
+    multi sub get-val($val, Bool) returns Bool {
+        $val eq 'true';
+    }
+
+    multi sub get-val($val, Numeric) returns Rat {
+        Rat($val);
+    }
+
+    multi sub get-val($val, Str) returns Str {
+        $val.subst('"', '', :g);
+    }
+
+    
+    method get-var(Str $name) {
+        if not %!vars.keys {
+            %!vars = self.get-vars();
+        }
+
+        if not %!vars{$name}:exists {
+            X::NoVar.throw(name => $name).throw;
+        }
+
+        my $val = self.command("var.get $name");
+        get-val($val, %!vars{$name});
+    }
+
+    multi sub set-val(Bool $val, Bool) returns Str {
+        $val.Str.lc;
+    }
+
+    multi sub set-val(Numeric $val, Numeric) {
+        $val.Str;
+    }
+    multi sub set-val(Str() $val, Str) {
+        '"' ~ $val ~ '"';
+    }
+
+    method set-var(Str $name, $val) {
+        if not %!vars.keys {
+            %!vars = self.get-vars();
+        }
+
+        if not %!vars{$name}:exists {
+            X::NoVar.throw(name => $name).throw;
+        }
+
+        my $out-val = set-val($val, %!vars{$name});
+
+        my $ret = self.command("var.set $name = $out-val");
+        if $ret ~~ /"Variable $name set"/ {
+            True;
+        }
+        else {
+            False;
+        }
+    }
 }
+
 # vim: expandtab shiftwidth=4 ft=perl6
