@@ -34,8 +34,17 @@ if try RunServer.new(port => $port, script => 't/data/request.liq') -> $ls {
     is $soap.get-var("infloat"), 3, "Float var is correct";
     ok $soap.set-var("inbool", False), "set bool var";
     is $soap.get-var("inbool"), False, "Bool var is correct";
-
-
+    is $soap.queues.keys.elems, 1, "got 1 queue";
+    is $soap.outputs.keys.elems, 1, "got 1 output";
+    is $soap.playlists.keys.elems,1, "got 1 playlist";
+    my $t = $ls.stdout.tap({ if  $_ ~~ /'Loading playlist'/ { pass "got that playlist"; $t.close; } });
+    is $soap.playlists<default-playlist>.uri, 't/data/play', "playlist.uri got what we expected";
+    lives-ok { $soap.playlists<default-playlist>.uri = 't/data/nothing' }, "set playlist";
+    todo "this seems to just return the old playlist";
+    is $soap.playlists<default-playlist>.uri, 't/data/nothing', "playlist.uri got the new one that we expected";
+    lives-ok { $soap.playlists<default-playlist>.reload }, "reload the playlist";
+    ok (my @next = $soap.playlists<default-playlist>.next), "got some 'next' stuff";
+    ok @next[0] ~~ /\[(ready|playing)\]/, "and the first one should have some status";
 
     LEAVE {
         $ls.kill;

@@ -219,6 +219,116 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
             False;
         }
     }
+
+
+    my role Item {
+        has Str $.name;
+        has Client $.client;
+    }
+
+    class Queue does Item {
+        =begin note
+        | incoming.consider <rid>
+        | incoming.ignore <rid>
+        | incoming.primary_queue
+        | incoming.push <uri>
+        | incoming.queue
+        | incoming.secondary_queue
+        =end note
+    }
+
+    method queues() {
+        if not %!queues.keys.elems {
+            self!get-items();
+        }
+        %!queues;
+    }
+
+    class Output does Item {
+        =begin note
+        | dummy-output.autostart
+        | dummy-output.metadata
+        | dummy-output.remaining
+        | dummy-output.skip
+        | dummy-output.start
+        | dummy-output.status
+        | dummy-output.stop
+        =end note
+    }
+
+    method outputs() {
+        if not %!outputs.keys.elems {
+            self!get-items();
+        }
+        %!outputs;
+    }
+
+    class Playlist does Item {
+        =begin note
+        | default-playlist.next
+        | default-playlist.reload
+        | default-playlist.uri [<URI>]
+        =end note
+
+        method next() {
+            $!client.command($!name ~ '.next').lines;
+        }
+
+        method reload() {
+            $!client.command($!name ~ '.reload') ~~ /OK/ ?? True !! False;
+        }
+
+        method uri() returns Str is rw {
+            my $client = $!client;
+            my $command = $!name ~ '.uri';
+            Proxy.new(
+                FETCH => method () {
+                    $client.command($command);
+                },
+                STORE => method (Str() $uri) {
+                    $client.command("$command $uri");
+                }
+            );
+        }
+    }
+
+    method playlists() {
+        if not %!playlists.keys.elems {
+            self!get-items();
+        }
+        %!playlists;
+    }
+
+    method !get-items() {
+        for self.list -> $item-line {
+            my ($name, $type)  = $item-line.split(/\s+\:\s+/);
+            given $type {
+                when 'queue' {
+                    %!queues{$name} = Queue.new(name => $name, client => $!client);
+
+                }
+                when 'playlist' {
+                    %!playlists{$name} = Playlist.new(name => $name, client => $!client);
+
+                }
+                when /^output/ {
+                    my $st = $_.split('.')[1];
+                    %!outputs{$name} = Output.new(name => $name, client => $!client, type => $st);
+                }
+                when /variables/ {
+                    # do nothing but want to know when we really get one we don't know about
+                }
+                default {
+                    warn "unknown item type '$type'";
+                }
+            }
+
+        }
+    }
+
+    has Queue       %!queues;
+    has Output      %!outputs;
+    has Playlist    %!playlists;
 }
 
 # vim: expandtab shiftwidth=4 ft=perl6
