@@ -45,6 +45,24 @@ if try RunServer.new(port => $port, script => 't/data/request.liq') -> $ls {
     lives-ok { $soap.playlists<default-playlist>.reload }, "reload the playlist";
     ok (my @next = $soap.playlists<default-playlist>.next), "got some 'next' stuff";
     ok @next[0] ~~ /\[(ready|playing)\]/, "and the first one should have some status";
+    #$ls.stdout.tap({ say $_ });
+    is $soap.outputs<dummy-output>.status, 'on', "status is 'on'";
+    ok $soap.outputs<dummy-output>.stop, "stop";
+    # the server doesn't seem to change instantly
+    sleep 1;
+    is $soap.outputs<dummy-output>.status, 'off', "status is now 'off'";
+    ok $soap.outputs<dummy-output>.start, "start";
+    sleep 1;
+    is $soap.outputs<dummy-output>.status, 'on', "status is 'on' again";
+    ok $soap.outputs<dummy-output>.skip, "skip";
+    ok do { $soap.outputs<dummy-output>.autostart = True }, "set autostart 'on'";
+    ok $soap.outputs<dummy-output>.autostart, "and it says so too";
+    nok do { $soap.outputs<dummy-output>.autostart = False }, "set autostart 'off'";
+    nok $soap.outputs<dummy-output>.autostart, "and it says so too";
+    ok do { $soap.outputs<dummy-output>.autostart = True }, "set autostart back on 'on' again";
+    isa-ok $soap.outputs<dummy-output>.remaining, Duration, "and remaining is a Duration";
+    isa-ok $soap.outputs<dummy-output>.metadata, Audio::Liquidsoap::Metadata, "metadata returns the right thing";
+
 
     LEAVE {
         $ls.kill;

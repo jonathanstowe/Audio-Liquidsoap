@@ -244,7 +244,31 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         %!queues;
     }
 
+    my role SimpleCommand[Str $command] {
+        method CALL-ME($self, *@args) {
+            $self.client.command($self.name ~ ".$command");
+        }
+    }
+
+    multi sub trait_mod:<is> (Method $m, Str :$command!) {
+        $m does SimpleCommand[$command];
+    }
+
+    class Metadata {
+        has Str $.decoder;
+        has Str $.filename;
+        has Str $.initial-uri;
+        has Str $.kind;
+        has DateTime $.on-air;
+        has Int $.rid;
+        has Str $.source;
+        has Str $.status;
+        has Bool $.temporary;
+
+    }
+
     class Output does Item {
+        has Str $.type;
         =begin note
         | dummy-output.autostart
         | dummy-output.metadata
@@ -254,6 +278,71 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         | dummy-output.status
         | dummy-output.stop
         =end note
+        
+        sub get-metadata-pair(Str $line) {
+            my ( $key, $value ) = $line.split('=',2);
+            # Awful
+            $key.subst-mutate('_', '-');
+            $value.subst-mutate('"', '', :g);
+            $value = do given $key {
+                when 'on-air' {
+                    DateTime.new($value.trans('/' => '-', ' ' => 'T'));
+                }
+                when 'temporary' {
+                    $value eq 'true';
+                }
+                when 'rid' {
+                    Int($value);
+                }
+                default {
+                    $value;
+                }
+
+            }
+            $key, $value;
+        }
+
+        method start() is command('start') { * }
+        method stop()  is command('stop') { * }
+        method status() is command('status') { * }
+        method skip() is command('skip') { * }
+        method autostart() is rw returns Bool {
+            my $client  = $!client;
+            my $name    = $!name;
+            Proxy.new(
+                FETCH   =>  method () returns Bool {
+                    $client.command("$name.autostart") eq 'on';
+                },
+                STORE   =>  method (Bool $val) returns Bool {
+                    my $on-off = $val ?? 'on' !! 'off';
+                    $client.command("$name.autostart $on-off") eq 'on';
+                }
+            );
+        }
+
+        method !remaining() is command('remaining') { * }
+
+        method remaining() returns Duration {
+            Duration.new(Rat(self!remaining // '0'));
+        }
+
+        method !metadata() is command('metadata') { * }
+
+        method metadata() {
+            my %meta;
+            my Bool $seen = False;
+            for self!metadata.lines -> $line {
+                if $line ~~ /^'---'/ {
+                    last if $seen;
+                    $seen = True;
+                    next;
+                }
+                # Moved the awful code to a subroutine
+                my ( $key, $value ) = get-metadata-pair($line);
+                %meta{$key} = $value;
+            }
+            Metadata.new(|%meta);
+        }
     }
 
     method outputs() {
