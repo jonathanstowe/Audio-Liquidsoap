@@ -45,7 +45,7 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     is $soap.queues.keys.elems, 1, "got 1 queue";
     is $soap.outputs.keys.elems, 1, "got 1 output";
     is $soap.playlists.keys.elems,1, "got 1 playlist";
-    my $t = $ls.stdout.tap({ if  $_ ~~ /'Loading playlist'/ { pass "got that playlist"; $t.close; } });
+
     is $soap.playlists<default-playlist>.uri, 't/data/play', "playlist.uri got what we expected";
 
     my $new-dir = create-new-dir($play-dir);
@@ -55,6 +55,7 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     todo "this seems to just return the old playlist";
     is $soap.playlists<default-playlist>.uri, $new-dir.Str, "playlist.uri got the new one that we expected";
     lives-ok { $soap.playlists<default-playlist>.reload }, "reload the playlist";
+    todo("this appears to be very timing dependent",2);
     ok (my @next = $soap.playlists<default-playlist>.next), "got some 'next' stuff";
     ok @next[0] ~~ /\[(ready|playing)\]/, "and the first one should have some status";
     #$ls.stdout.tap({ say $_ });
@@ -84,6 +85,7 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
         lives-ok { @rids.append: $soap.queues<incoming>.push($file.Str) }, "push { $file.Str } to the request queue";
     }
 
+
     my @queue;
     lives-ok { @queue = $soap.queues<incoming>.queue }, "queue";
     # dubious if the system is fast enough";
@@ -94,9 +96,35 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     lives-ok { @secondary-queue = $soap.queues<incoming>.secondary-queue }, "secondary-queue";
     is @primary-queue.elems + @secondary-queue.elems, @queue.elems, "and the primary and secondary queues are right-ish";
 
-    #$ls.stdout.tap({ say $_ });
-    ok $soap.queues<incoming>.consider(@secondary-queue.pick), "consider";
-    ok $soap.queues<incoming>.ignore(@secondary-queue.pick), "ignore";
+    my ( $con-rid, $ign-rid ) = @secondary-queue.pick(2);
+    ok $soap.queues<incoming>.consider($con-rid), "consider request id $con-rid";
+    ok $soap.queues<incoming>.ignore($ign-rid), "ignore request id $ign-rid";
+
+    my @alive;
+    lives-ok { @alive = $soap.requests.alive }, "alive";
+
+    my @all;
+    lives-ok { @all   = $soap.requests.all  }, "all";
+
+    my @on-air;
+    lives-ok { @on-air = $soap.requests.on-air }, "on-air";
+
+    # Not quite sure how to test that resolving gets populate (may require a "difficult" source)
+    my @resolving;
+    lives-ok { @resolving =  $soap.requests.resolving }, "resolving";
+
+    for $soap.requests.trace(@all.pick) -> $trace {
+        isa-ok $trace, Audio::Liquidsoap::Request::TraceItem, "trace item is the right thing";
+        isa-ok $trace.when, DateTime, "got a DateTime";
+        ok $trace.what, "and got some text '{ $trace.what }'";
+    }
+
+    my $meta-rid = @all.pick;
+    my $request-meta;
+    lives-ok { $request-meta = $soap.requests.metadata($meta-rid) }, "get metadata for request id $meta-rid";
+    isa-ok $request-meta, Audio::Liquidsoap::Metadata, "right sort of thing";
+    is $request-meta.rid, $meta-rid, "got the right record";
+
 
     LEAVE {
         $ls.kill;

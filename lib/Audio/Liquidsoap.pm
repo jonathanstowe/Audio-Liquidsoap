@@ -244,6 +244,129 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         }
     }
 
+    sub rids-from-list(Str:D $rids) {
+        $rids.comb(/\d+/).map({Int($_)});
+    }
+
+    class Metadata {
+        has Str $.decoder;
+        has Str $.filename;
+        has Str $.initial-uri;
+        has Str $.kind;
+        has DateTime $.on-air;
+        has Int $.rid;
+        has Str $.source;
+        has Str $.status;
+        has Bool $.temporary;
+
+        multi sub meta-value(Str $key, Str:D $value) {
+            $value.subst('"', '', :g)
+        }
+
+        multi sub meta-value('on-air', Str:D $value) {
+            DateTime.new(samewith(Str,$value).trans('/' => '-', ' ' => 'T'))
+        }
+        multi sub meta-value('temporary', Str:D $value) {
+            samewith(Str, $value) eq 'true';
+        }
+        multi sub meta-value('rid', Str:D $value ) {
+            Int(samewith(Str, $value));
+        }
+
+        multi sub meta-key(Str $key) {
+            $key.subst('_', '-');
+        }
+        
+        sub get-metadata-pair(Str $line) {
+            my ( $key, $value ) = $line.split('=',2);
+            if $key && $value {
+                $key   = meta-key($key);
+                $value = meta-value($key, $value);
+                $key, $value;
+            }
+        }
+
+        multi method new(:$metadata!) {
+            my %meta;
+            for $metadata.lines -> $line {
+                # Moved the awful code to a subroutine
+                if my ( $key, $value) = get-metadata-pair($line) {
+                    if $key {
+                        %meta{$key} = $value;
+                    }
+                }
+            }
+            samewith(|%meta);
+        }
+    }
+
+    class Request does Item {
+        =begin note
+        | request.alive
+        | request.all
+        | request.metadata <rid>
+        | request.on_air
+        | request.resolving
+        | request.trace <rid>
+        =end note
+
+        method !alive()     is command('alive')     { * }
+
+        method alive() {
+            rids-from-list(self!alive);
+        }
+
+        method !all()       is command('all')       { * }
+
+        method all() {
+            rids-from-list(self!all);
+        }
+
+        method !on-air()    is command('on_air')    { * }
+
+        method on-air() {
+            rids-from-list(self!on-air);
+        }
+
+        method !resolving() is command('resolving') { * }
+
+        method resolving() {
+            rids-from-list(self!resolving);
+        }
+
+        class TraceItem {
+            has DateTime $.when;
+            has Str      $.what;
+
+        }
+
+        method trace(Int() $rid) {
+            my @trace;
+            for self.command('trace', $rid).lines -> $line {
+                if $line ~~ /^^\[$<when>=(.+?)\]\s+$<that>=(.+)$/ {
+                    my $what = ~$/<that>;
+                    my $dt = DateTime.new((~$/<when>).trans('/' => '-', ' ' => 'T'));
+                    @trace.append: TraceItem.new(when => $dt, what => $what);
+                }
+            }
+            @trace;
+        }
+
+        method metadata(Int() $rid) returns Metadata {
+            my $metadata = self.command('metadata', $rid);
+            Metadata.new(:$metadata);
+        }
+    }
+
+    has Request $!requests; 
+
+    method requests() returns Request {
+        if not $!requests.defined {
+            $!requests = Request.new(name => 'request', client => $!client);
+        }
+        $!requests;
+    }
+
     class Queue does Item {
         =begin note
         | incoming.consider <rid>
@@ -254,9 +377,6 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         | incoming.secondary_queue
         =end note
 
-        sub rids-from-list(Str:D $rids) {
-            $rids.comb(/\d+/).map({Int($_)});
-        }
 
         method push(Str $uri) returns Int {
             my $rid = self.command('push',$uri);
@@ -298,18 +418,6 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
     }
 
 
-    class Metadata {
-        has Str $.decoder;
-        has Str $.filename;
-        has Str $.initial-uri;
-        has Str $.kind;
-        has DateTime $.on-air;
-        has Int $.rid;
-        has Str $.source;
-        has Str $.status;
-        has Bool $.temporary;
-
-    }
 
     class Output does Item {
         has Str $.type;
@@ -323,35 +431,6 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         | dummy-output.stop
         =end note
 
-        multi sub meta-value(Str $key, Str:D $value) {
-            $value.subst('"', '', :g)
-        }
-
-        multi sub meta-value('on-air', Str:D $value) {
-            DateTime.new(samewith(Str,$value).trans('/' => '-', ' ' => 'T'))
-        }
-        multi sub meta-value('temporary', Str:D $value) {
-            samewith(Str, $value) eq 'true';
-        }
-        multi sub meta-value('rid', Str:D $value ) {
-            Int(samewith(Str, $value));
-        }
-
-        multi sub meta-key(Str $key) {
-            $key.subst('_', '-');
-        }
-        
-        sub get-metadata-pair(Str $line) {
-            my ( $key, $value ) = $line.split('=',2);
-            if $key && $value {
-                $key   = meta-key($key);
-                $value = meta-value($key, $value);
-                $key, $value;
-            }
-            else {
-                Empty;
-            }
-        }
 
         method start() is command('start') { * }
         method stop()  is command('stop') { * }
@@ -390,16 +469,7 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         method metadata() {
             my @metas;
             for self!metadata.split(/^^'--- '\d+' ---'\s*$$/,:skip-empty) -> $metadata {
-                my %meta;
-                for $metadata.lines -> $line {
-                    # Moved the awful code to a subroutine
-                    if my ( $key, $value) = get-metadata-pair($line) {
-                        if $key {
-                            %meta{$key} = $value;
-                        }
-                    }
-                }
-                @metas.append: Metadata.new(|%meta);
+                @metas.append: Metadata.new(:$metadata);
             }
             @metas.sort(-> $v { $v.rid });
         }
