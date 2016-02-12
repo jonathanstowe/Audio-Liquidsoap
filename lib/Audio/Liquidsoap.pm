@@ -330,6 +330,14 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         method !remaining() is command('remaining') { * }
 
         method remaining() returns Duration {
+            # very occasionally it returns something that
+            # isn't a number but only does this when I'm
+            # not looking at it.
+            CATCH {
+                default {
+                    return Duration.new(Rat(0));
+                }
+            }
             Duration.new(Rat(self!remaining // '0'));
         }
 
