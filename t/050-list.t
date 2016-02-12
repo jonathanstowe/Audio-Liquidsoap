@@ -15,7 +15,7 @@ use RunServer;
 my $data-dir = $*PROGRAM.parent.child('data');
 my $play-dir = $data-dir.child('play');
 
-my $script = $data-dir.child('request.liq');
+my $script = $data-dir.child('test-resources.liq');
 
 if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     my @to-delete;
