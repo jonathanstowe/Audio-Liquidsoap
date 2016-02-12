@@ -221,9 +221,27 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
     }
 
 
+    my role SimpleCommand[Str $command] {
+        method CALL-ME($self, *@args) {
+            $self.client.command($self.name ~ ".$command");
+        }
+    }
+
+    multi sub trait_mod:<is> (Method $m, Str :$command!) {
+        $m does SimpleCommand[$command];
+    }
+
     my role Item {
         has Str $.name;
         has Client $.client;
+
+        method command(Str $command, *@args) {
+            my $full-command = "{$!name}.$command";
+            if @args.elems {
+                $full-command ~= ' ' ~ @args.join(' ');
+            }
+            $!client.command($full-command);
+        }
     }
 
     class Queue does Item {
@@ -235,6 +253,41 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         | incoming.queue
         | incoming.secondary_queue
         =end note
+
+        sub rids-from-list(Str:D $rids) {
+            $rids.comb(/\d+/).map({Int($_)});
+        }
+
+        method push(Str $uri) returns Int {
+            my $rid = self.command('push',$uri);
+            $rid.defined ?? Int($rid) !! Int;
+        }
+
+        method consider(Int() $rid) {
+            self.command('consider', $rid) eq 'OK';
+        }
+
+        method ignore(Int() $rid) {
+            self.command('ignore', $rid) eq 'OK';
+        }
+
+        method !queue() is command('queue') { * }
+
+        method queue() {
+            rids-from-list(self!queue);
+        }
+
+        method !primary-queue() is command('primary_queue') { * }
+
+        method primary-queue() {
+            rids-from-list(self!primary-queue);
+        }
+
+        method !secondary-queue() is command('secondary_queue') { * }
+
+        method secondary-queue() {
+            rids-from-list(self!secondary-queue);
+        }
     }
 
     method queues() {
@@ -244,15 +297,6 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         %!queues;
     }
 
-    my role SimpleCommand[Str $command] {
-        method CALL-ME($self, *@args) {
-            $self.client.command($self.name ~ ".$command");
-        }
-    }
-
-    multi sub trait_mod:<is> (Method $m, Str :$command!) {
-        $m does SimpleCommand[$command];
-    }
 
     class Metadata {
         has Str $.decoder;

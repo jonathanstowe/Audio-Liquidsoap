@@ -18,6 +18,8 @@ my $play-dir = $data-dir.child('play');
 my $script = $data-dir.child('request.liq');
 
 if try RunServer.new(port => $port, script => $script.Str) -> $ls {
+    my @to-delete;
+
     diag "Testing on port $port";
     $ls.run;
 
@@ -47,6 +49,7 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     is $soap.playlists<default-playlist>.uri, 't/data/play', "playlist.uri got what we expected";
 
     my $new-dir = create-new-dir($play-dir);
+    @to-delete.append: $new-dir;
 
     lives-ok { $soap.playlists<default-playlist>.uri = $new-dir.Str }, "set playlist";
     todo "this seems to just return the old playlist";
@@ -72,16 +75,43 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     isa-ok $soap.outputs<dummy-output>.remaining, Duration, "and remaining is a Duration";
     isa-ok $soap.outputs<dummy-output>.metadata[0], Audio::Liquidsoap::Metadata, "metadata returns the right thing";
 
+    # create a bunch of files to make requests
+    $new-dir = create-new-dir($play-dir, 10);
+    @to-delete.append: $new-dir;
 
+    my @rids;
+    for $new-dir.dir -> $file {
+        lives-ok { @rids.append: $soap.queues<incoming>.push($file.Str) }, "push { $file.Str } to the request queue";
+    }
+
+    my @queue;
+    lives-ok { @queue = $soap.queues<incoming>.queue }, "queue";
+    # dubious if the system is fast enough";
+    is @queue.elems, @rids.elems, "queue is what we expected";
+    my @primary-queue;
+    lives-ok { @primary-queue = $soap.queues<incoming>.primary-queue }, "primary-queue";
+    my @secondary-queue;
+    lives-ok { @secondary-queue = $soap.queues<incoming>.secondary-queue }, "secondary-queue";
+    is @primary-queue.elems + @secondary-queue.elems, @queue.elems, "and the primary and secondary queues are right-ish";
+
+    #$ls.stdout.tap({ say $_ });
+    ok $soap.queues<incoming>.consider(@secondary-queue.pick), "consider";
+    ok $soap.queues<incoming>.ignore(@secondary-queue.pick), "ignore";
 
     LEAVE {
         $ls.kill;
         await $ls.Promise;
-        if $new-dir.defined && $new-dir.e {
-            for $new-dir.dir -> $f {
-                $f.unlink;
+
+        for @to-delete -> $d {
+            if $d.d {
+                for $d.dir -> $f {
+                    $f.unlink;
+                }
+                $d.rmdir;
             }
-            $new-dir.rmdir;
+            else {
+                $d.unlink;
+            }
         }
     }
 }
