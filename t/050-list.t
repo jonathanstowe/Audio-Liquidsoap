@@ -12,9 +12,15 @@ use lib 't/lib';
 
 use RunServer;
 
-if try RunServer.new(port => $port, script => 't/data/request.liq') -> $ls {
+my $data-dir = $*PROGRAM.parent.child('data');
+my $play-dir = $data-dir.child('play');
+
+my $script = $data-dir.child('request.liq');
+
+if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     diag "Testing on port $port";
     $ls.run;
+
 
     diag "waiting until server settles ...";
     sleep 2;
@@ -39,9 +45,12 @@ if try RunServer.new(port => $port, script => 't/data/request.liq') -> $ls {
     is $soap.playlists.keys.elems,1, "got 1 playlist";
     my $t = $ls.stdout.tap({ if  $_ ~~ /'Loading playlist'/ { pass "got that playlist"; $t.close; } });
     is $soap.playlists<default-playlist>.uri, 't/data/play', "playlist.uri got what we expected";
-    lives-ok { $soap.playlists<default-playlist>.uri = 't/data/nothing' }, "set playlist";
+
+    my $new-dir = create-new-dir($play-dir);
+
+    lives-ok { $soap.playlists<default-playlist>.uri = $new-dir.Str }, "set playlist";
     todo "this seems to just return the old playlist";
-    is $soap.playlists<default-playlist>.uri, 't/data/nothing', "playlist.uri got the new one that we expected";
+    is $soap.playlists<default-playlist>.uri, $new-dir.Str, "playlist.uri got the new one that we expected";
     lives-ok { $soap.playlists<default-playlist>.reload }, "reload the playlist";
     ok (my @next = $soap.playlists<default-playlist>.next), "got some 'next' stuff";
     ok @next[0] ~~ /\[(ready|playing)\]/, "and the first one should have some status";
@@ -64,15 +73,39 @@ if try RunServer.new(port => $port, script => 't/data/request.liq') -> $ls {
     isa-ok $soap.outputs<dummy-output>.metadata[0], Audio::Liquidsoap::Metadata, "metadata returns the right thing";
 
 
+
     LEAVE {
         $ls.kill;
         await $ls.Promise;
+        if $new-dir.defined && $new-dir.e {
+            for $new-dir.dir -> $f {
+                $f.unlink;
+            }
+            $new-dir.rmdir;
+        }
     }
 }
 else {
     plan 2;
     skip-rest "can't start test liquidsoap";
 
+}
+
+sub create-new-dir(IO::Path:D $pdir, Int $count = 1 ) {
+    my $name = new-name();
+    my $new-dir = $pdir.parent.child($name);
+    $new-dir.mkdir;
+    for ^$count {
+        my $file = $pdir.dir.pick;
+        my $new-name = new-name() ~ '.mp3';
+        $file.copy($new-dir.child($new-name));
+    }
+    $new-dir;
+}
+
+sub new-name() {
+    my $l = (7 .. 12).pick;
+    ("a" .. "z").pick($l).join("");
 }
 
 done-testing;
