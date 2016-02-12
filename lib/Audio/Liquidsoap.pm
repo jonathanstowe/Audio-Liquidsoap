@@ -420,11 +420,11 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         =end note
 
         method next() {
-            $!client.command($!name ~ '.next').lines;
+            self.command('next').lines;
         }
 
         method reload() {
-            $!client.command($!name ~ '.reload') ~~ /OK/ ?? True !! False;
+            self.command('reload') eq 'OK'
         }
 
         method uri() returns Str is rw {
