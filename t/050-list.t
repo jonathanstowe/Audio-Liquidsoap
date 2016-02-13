@@ -137,6 +137,21 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
         skip "still not got anything in 'all' skipping the metadata test", 3;
     }
 
+    # Live source
+    ok $soap.inputs<live-source> ~~ Audio::Liquidsoap::Input::Harbor, "the live-source has the Harbor role";
+    is $soap.inputs<live-source>.status, "no source client connected", "got the expected status";;
+
+    ok $soap.inputs<relay-source> ~~ Audio::Liquidsoap::Input::Http, "the relay source has the Http role";
+    is $soap.inputs<relay-source>.status, 'stopped', "status is 'stopped'";
+    is $soap.inputs<relay-source>.uri, 'http://stream.futuremusic.fm:8000/mp3', "got the right uri";
+    ok $soap.inputs<relay-source>.start, "start it";
+    ok $soap.inputs<relay-source>.status ne 'stopped', "not stopped anymore";
+    ok $soap.inputs<relay-source>.stop, "stop it again";
+    is $soap.inputs<relay-source>.status,'stopped', 'and the status is "stopped" again';
+    ok do { $soap.inputs<relay-source>.uri = 'http://46.165.203.197:80/club_low.mp3'}, "set the uri";
+    is $soap.inputs<relay-source>.uri, 'http://46.165.203.197:80/club_low.mp3', "and check it's the same";
+
+
 
     LEAVE {
         $ls.kill;
