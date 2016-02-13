@@ -335,6 +335,7 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         }
 
         class TraceItem {
+            has Int      $.rid;
             has DateTime $.when;
             has Str      $.what;
 
@@ -346,7 +347,7 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
                 if $line ~~ /^^\[$<when>=(.+?)\]\s+$<that>=(.+)$/ {
                     my $what = ~$/<that>;
                     my $dt = DateTime.new((~$/<when>).trans('/' => '-', ' ' => 'T'));
-                    @trace.append: TraceItem.new(when => $dt, what => $what);
+                    @trace.append: TraceItem.new(:$rid, when => $dt, what => $what);
                 }
             }
             @trace;
@@ -482,6 +483,80 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         %!outputs;
     }
 
+    class Input does Item {
+        has Str $.type;
+        role Http {
+            method !start() is command('start') { * }
+            method start() returns Bool {
+                self!start eq 'Done';
+            }
+            method uri() returns Str is rw {
+                my $self = self;
+                Proxy.new(
+                    FETCH => method () {
+                        $self.command('url');
+                    },
+                    STORE => method (Str() $url) {
+                        $self.command('url', $url);
+                    }
+                );
+            }
+
+        }
+        role Harbor {
+            method !kick() returns Str is command('kick') { * }
+            method kick() returns Bool {
+                self!kick eq 'Done'
+            }
+        }
+        =begin note
+         "http relay"
+         | relay-source.buffer_length
+         | relay-source.start
+         | relay-source.status
+         | relay-source.stop
+         | relay-source.url [url]
+         "harbor"
+         | live-source.buffer_length
+         | live-source.kick
+         | live-source.status
+         | live-source.stop
+        =end note
+
+        # TODO: make pluggable
+        my %type-role = harbor => Harbor, http => Http;
+
+        multi method new(Str :$name, Client :$client, Str :$type ) {
+            my $self = self.bless(:$name, :$client, :$type);
+            if %type-role{$type}:exists {
+                $self does %type-role{$type};
+            }
+            $self;
+        }
+
+        method !buffer-length() is command('buffer_length') { * }
+        method buffer-length() returns Rat {
+            Rat(self!buffer-length);
+        }
+
+        method !stop() is command('stop') { * }
+        method stop() returns Bool {
+            self!stop eq 'Done'
+        }
+
+        method status() returns Str is command('status') { * }
+
+    }
+
+    has Input %!inputs;
+
+    method inputs() {
+        if not %!inputs.keys.elems {
+            self!get-items();
+        }
+        %!inputs;
+    }
+
     class Playlist does Item {
         =begin note
         | default-playlist.next
@@ -533,6 +608,10 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
                 when /^output/ {
                     my $st = $_.split('.')[1];
                     %!outputs{$name} = Output.new(name => $name, client => $!client, type => $st);
+                }
+                when /^input/ {
+                    my $st = $_.split('.')[1];
+                    %!inputs{$name} = Input.new(name => $name, client => $!client, type => $st);
                 }
                 when /variables/ {
                     # do nothing but want to know when we really get one we don't know about
