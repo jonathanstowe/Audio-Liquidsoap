@@ -15,7 +15,7 @@ outblank = blank()
 
 incoming = request.queue(id="incoming")
 
-live = input.harbor("live-source", id="live-source", port=8768)
+live = input.harbor("live-source", id="live-source", port=9878)
 
 relay = input.http("http://stream.futuremusic.fm:8000/mp3", id="relay-source", autostart=false)
 
