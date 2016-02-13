@@ -222,19 +222,19 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
 
 
     my role SimpleCommand[Str $command] {
-        method CALL-ME($self, *@args) {
+        method CALL-ME($self) {
             $self.command($command);
         }
     }
 
     my role SimpleCommand[Str $command, $check] {
-        method CALL-ME($self, *@args) {
+        method CALL-ME($self) {
             $self.command($command) eq $check;
         }
     }
 
     my role SimpleCommand[Str $command, &after ] {
-        method CALL-ME($self, *@args) {
+        method CALL-ME($self) {
             after($self.command($command));
         }
     }
@@ -443,19 +443,17 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
             );
         }
 
-        method !remaining() is command('remaining') { * }
-
-        method remaining() returns Duration {
-            # very occasionally it returns something that
-            # isn't a number but only does this when I'm
-            # not looking at it.
+        sub get-remaining(Str $r) returns Duration {
             CATCH {
                 default {
                     return Duration.new(Rat(0));
                 }
             }
-            Duration.new(Rat(self!remaining // '0'));
+            Duration.new(Rat($r // '0'));
         }
+
+        method remaining() returns Duration is command('remaining', &get-remaining) { * }
+
 
         method !metadata() is command('metadata') { * }
 
