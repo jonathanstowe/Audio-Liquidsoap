@@ -113,17 +113,29 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
     my @resolving;
     lives-ok { @resolving =  $soap.requests.resolving }, "resolving";
 
-    for $soap.requests.trace(@all.pick) -> $trace {
-        isa-ok $trace, Audio::Liquidsoap::Request::TraceItem, "trace item is the right thing";
-        isa-ok $trace.when, DateTime, "got a DateTime";
-        ok $trace.what, "and got some text '{ $trace.what }'";
+    if @all.elems > 0 {
+        for $soap.requests.trace(@all.pick) -> $trace {
+            isa-ok $trace, Audio::Liquidsoap::Request::TraceItem, "trace item is the right thing";
+            isa-ok $trace.when, DateTime, "got a DateTime";
+            ok $trace.what, "and got some text '{ $trace.what }'";
+        }
+    }
+    else {
+        skip "'all' is not populated - skipping", 3;
     }
 
-    my $meta-rid = @all.pick;
-    my $request-meta;
-    lives-ok { $request-meta = $soap.requests.metadata($meta-rid) }, "get metadata for request id $meta-rid";
-    isa-ok $request-meta, Audio::Liquidsoap::Metadata, "right sort of thing";
-    is $request-meta.rid, $meta-rid, "got the right record";
+    my $meta-rid;
+    lives-ok { $meta-rid = $soap.requests.all.pick }, "re-get all to check";
+
+    if $meta-rid.defined {
+        my $request-meta;
+        lives-ok { $request-meta = $soap.requests.metadata($meta-rid) }, "get metadata for request id $meta-rid";
+        isa-ok $request-meta, Audio::Liquidsoap::Metadata, "right sort of thing";
+        is $request-meta.rid, $meta-rid, "got the right record";
+    }
+    else {
+        skip "still not got anything in 'all' skipping the metadata test", 3;
+    }
 
 
     LEAVE {
