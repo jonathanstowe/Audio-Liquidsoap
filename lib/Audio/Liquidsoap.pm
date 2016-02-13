@@ -223,12 +223,32 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
 
     my role SimpleCommand[Str $command] {
         method CALL-ME($self, *@args) {
-            $self.client.command($self.name ~ ".$command");
+            $self.command($command);
+        }
+    }
+
+    my role SimpleCommand[Str $command, $check] {
+        method CALL-ME($self, *@args) {
+            $self.command($command) eq $check;
+        }
+    }
+
+    my role SimpleCommand[Str $command, &after ] {
+        method CALL-ME($self, *@args) {
+            after($self.command($command));
         }
     }
 
     multi sub trait_mod:<is> (Method $m, Str :$command!) {
         $m does SimpleCommand[$command];
+    }
+
+    multi sub trait_mod:<is> (Method $m, :$command! (Str $cmd, Str $check)) {
+        $m does SimpleCommand[$cmd, $check];
+    }
+
+    multi sub trait_mod:<is> (Method $m, :$command! (Str $cmd, &after)) {
+        $m does SimpleCommand[$cmd, &after];
     }
 
     my role Item {
@@ -244,7 +264,7 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         }
     }
 
-    sub rids-from-list(Str:D $rids) {
+    sub rids-from-list(Str $rids) {
         $rids.comb(/\d+/).map({Int($_)});
     }
 
@@ -310,35 +330,18 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         | request.trace <rid>
         =end note
 
-        method !alive()     is command('alive')     { * }
+        method alive()     is command('alive', &rids-from-list)     { * }
 
-        method alive() {
-            rids-from-list(self!alive);
-        }
+        method all()       is command('all', &rids-from-list)       { * }
 
-        method !all()       is command('all')       { * }
+        method on-air()    is command('on_air', &rids-from-list)    { * }
 
-        method all() {
-            rids-from-list(self!all);
-        }
-
-        method !on-air()    is command('on_air')    { * }
-
-        method on-air() {
-            rids-from-list(self!on-air);
-        }
-
-        method !resolving() is command('resolving') { * }
-
-        method resolving() {
-            rids-from-list(self!resolving);
-        }
+        method resolving() is command('resolving', &rids-from-list) { * }
 
         class TraceItem {
             has Int      $.rid;
             has DateTime $.when;
             has Str      $.what;
-
         }
 
         method trace(Int() $rid) {
@@ -392,23 +395,12 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
             self.command('ignore', $rid) eq 'OK';
         }
 
-        method !queue() is command('queue') { * }
+        method queue() is command('queue', &rids-from-list) { * }
 
-        method queue() {
-            rids-from-list(self!queue);
-        }
+        method primary-queue() is command('primary_queue', &rids-from-list) { * }
 
-        method !primary-queue() is command('primary_queue') { * }
+        method secondary-queue() is command('secondary_queue', &rids-from-list) { * }
 
-        method primary-queue() {
-            rids-from-list(self!primary-queue);
-        }
-
-        method !secondary-queue() is command('secondary_queue') { * }
-
-        method secondary-queue() {
-            rids-from-list(self!secondary-queue);
-        }
     }
 
     method queues() {
@@ -486,10 +478,9 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
     class Input does Item {
         has Str $.type;
         role Http {
-            method !start() is command('start') { * }
-            method start() returns Bool {
-                self!start eq 'Done';
-            }
+
+            method start() is command('start', 'Done') { * }
+
             method uri() returns Str is rw {
                 my $self = self;
                 Proxy.new(
@@ -504,11 +495,9 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
 
         }
         role Harbor {
-            method !kick() returns Str is command('kick') { * }
-            method kick() returns Bool {
-                self!kick eq 'Done'
-            }
+            method kick() returns Str is command('kick', 'Done') { * }
         }
+
         =begin note
          "http relay"
          | relay-source.buffer_length
@@ -534,15 +523,9 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
             $self;
         }
 
-        method !buffer-length() is command('buffer_length') { * }
-        method buffer-length() returns Rat {
-            Rat(self!buffer-length);
-        }
+        method buffer-length() is command('buffer_length', -> Str $l { Rat($l) }) { * }
 
-        method !stop() is command('stop') { * }
-        method stop() returns Bool {
-            self!stop eq 'Done'
-        }
+        method stop() is command('stop', 'Done') { * }
 
         method status() returns Str is command('status') { * }
 
@@ -564,13 +547,9 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
         | default-playlist.uri [<URI>]
         =end note
 
-        method next() {
-            self.command('next').lines;
-        }
+        method next() is command('next', -> $l { $l.lines} ) { * }
 
-        method reload() {
-            self.command('reload') eq 'OK'
-        }
+        method reload() is command('reload', 'OK') { * }
 
         method uri() returns Str is rw {
             my $client = $!client;
