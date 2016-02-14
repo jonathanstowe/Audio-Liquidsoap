@@ -1,5 +1,6 @@
 #!/usr/bin/env liquidsoap
 
+# This is the basis of the script that I have used for testing
 set("log.stdout", true)
 set("server.telnet", true)
 
