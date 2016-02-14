@@ -17,6 +17,8 @@ say "Connected to liquidsoap { $ls.version } up since { DateTime.new($ls.uptime)
 
 ```
 
+There are more complete examples in the [Examples Directory](./examples)
+
 ## Description
 
 This provides a mechanism to interact with the [Liquidsoap media
@@ -32,6 +34,11 @@ However it should be borne in mind that you will almost certainly need
 to still actually to write some liquidsoap script in order to declare
 the things to manipulate. 
 
+Currently this only supports a TCP connection to the liquidsoap command
+server as Perl 6 does not currently support Unix domain sockets, so you
+may need to use something like ```netcat``` to provide a proxy if you
+want to work with an existing installation that provides a server for
+Unix domain sockets.
 
 ## Installation
 
