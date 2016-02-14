@@ -10,7 +10,8 @@ use Audio::Liquidsoap;
 
 my $ls = Audio::Liquidsoap.new;
 
-say $ls.version;
+say "Connected to liquidsoap { $ls.version } up since { DateTime.new($ls.uptime) }";
+
 
 ...
 
