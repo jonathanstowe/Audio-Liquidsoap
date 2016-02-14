@@ -1,8 +1,17 @@
 #!/usr/bin/env perl6 
 
+use v6.c;
+
 use Audio::Liquidsoap;
 
 multi sub MAIN(Str :$host = 'localhost', Int :$port = 1234, Str :$path = '/tmp/incoming' ) {
+    CATCH {
+        when X::NoServer {
+            say "Cannot connect on $host:$port, please check that 'liquidsoap' is running";
+            exit;
+        }
+    }
+
     my $soap = Audio::Liquidsoap.new(:$host, :$port);
     say "Using liquidsoap version { $soap.version } up since { DateTime.new(now - $soap.uptime) }";
 
