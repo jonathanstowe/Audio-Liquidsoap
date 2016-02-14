@@ -32,6 +32,11 @@ is no soundcard in the system or the liquidsoap wasn't build with the
 appropriate support.  If all else fails you can use ```output.dummy```
 but this won't actually result in any output.
 
+If you are looking for examples of liquidsoap scripts rather than example
+of how you might use this module then you might want to look at
+http://savonet.sourceforge.net/doc-svn/documentation.html which has loads
+of specific examples and tutorials.
+
 ## [Simple](./simple)
 
 This demonstrates a simple player that queues MP3 files that appear in
