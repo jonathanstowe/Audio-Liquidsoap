@@ -6,8 +6,6 @@ set("server.telnet", true)
 
 path = dirname(argv(0));
 
-print(path)
-
 amen = single("#{path}/amen.mp3")
 
 queue = request.queue(id="incoming")
