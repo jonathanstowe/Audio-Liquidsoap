@@ -269,6 +269,8 @@ class Audio::Liquidsoap:ver<0.0.1>:auth<github:jonathanstowe> {
     }
 
     class Metadata {
+        has Str $.title;
+        has Str $.artist;
         has Str $.decoder;
         has Str $.filename;
         has Str $.initial-uri;
