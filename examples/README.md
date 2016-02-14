@@ -19,12 +19,12 @@ configuration on localhost as this is the most common usage and the choice
 of outputs available is very dependent on the way that the liquidsoap
 was built.  If you prefer you can either edit the line  :
 
-   output.icecast(%mp3,host="localhost",port=8000,password="hackme",mount="radio", radio)
+    output.icecast(%mp3,host="localhost",port=8000,password="hackme",mount="radio", radio)
 
 to suit your configuration (of course leaving the source radio ( the
 last argument,) untouched.)  Or you can replace it with:
 
-   output.prefered(radio)
+    output.prefered(radio)
 
 which will force output to the first mechanism it can find to send the
 output to some soundcard.  Of course this may not work either if there
