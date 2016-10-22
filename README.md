@@ -2,6 +2,8 @@
 
 Interact with the Liquidsoap telnet interface.
 
+[![Build Status](https://travis-ci.org/jonathanstowe/Audio-Liquidsoap.svg?branch=master)](https://travis-ci.org/jonathanstowe/Audio-Liquidsoap)
+
 ## Synopsis
 
 ```
