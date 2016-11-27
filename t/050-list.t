@@ -3,7 +3,6 @@
 use v6;
 
 use Test;
-plan 78;
 
 use Audio::Liquidsoap;
 use Test::Util::ServerPort;
