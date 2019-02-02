@@ -46,7 +46,6 @@ if try RunServer.new(port => $port) -> $ls {
 
         LEAVE {
             $ls.kill;
-            await $ls.Promise;
         }
     }
 }

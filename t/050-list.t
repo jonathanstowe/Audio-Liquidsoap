@@ -170,7 +170,6 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
 
         LEAVE {
             $ls.kill;
-            await $ls.Promise;
 
             for @to-delete -> $d {
                 if $d.d {
