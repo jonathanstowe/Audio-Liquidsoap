@@ -1,5 +1,6 @@
 #!/usr/bin/env liquidsoap
 
+set("log.file", false)
 set("log.stdout", true)
 set("server.telnet", true)
 set("server.telnet.bind_addr","127.0.0.1")
