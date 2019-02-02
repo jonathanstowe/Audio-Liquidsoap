@@ -6,7 +6,7 @@
     "source": "git://github.com/jonathanstowe/Audio-Liquidsoap.git",
     "bugtracker": "https://github.com/jonathanstowe/Audio-Liquidsoap/issues"
   },
-  "perl": "6.c",
+  "perl": "6.*",
   "resources": [
     
   ],
