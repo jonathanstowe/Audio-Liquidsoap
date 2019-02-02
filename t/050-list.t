@@ -13,10 +13,10 @@ use lib $*PROGRAM.parent.add('lib').absolute;
 
 use RunServer;
 
-my $data-dir = $*PROGRAM.parent.child('data');
-my $play-dir = $data-dir.child('play');
+my $data-dir = $*PROGRAM.parent.add('data');
+my $play-dir = $data-dir.add('play');
 
-my $script = $data-dir.child('test-resources.liq');
+my $script = $data-dir.add('test-resources.liq');
 
 
 if try RunServer.new(port => $port, script => $script.Str) -> $ls {
@@ -202,12 +202,12 @@ else {
 
 sub create-new-dir(IO::Path:D $pdir, Int $count = 1 ) {
     my $name = new-name();
-    my $new-dir = $pdir.parent.child($name);
+    my $new-dir = $pdir.parent.add($name);
     $new-dir.mkdir;
     for ^$count {
         my $file = $pdir.dir.pick;
         my $new-name = new-name() ~ '.mp3';
-        $file.copy($new-dir.child($new-name));
+        $file.copy($new-dir.add($new-name));
     }
     $new-dir;
 }

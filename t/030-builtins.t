@@ -14,10 +14,10 @@ use lib $*PROGRAM.parent.add('lib').absolute;
 
 use RunServer;
 
-my $data-dir = $*PROGRAM.parent.child('data');
-my $play-dir = $data-dir.child('play');
+my $data-dir = $*PROGRAM.parent.add('data');
+my $play-dir = $data-dir.add('play');
 
-my $script = $data-dir.child('test-resources.liq');
+my $script = $data-dir.add('test-resources.liq');
 
 if try RunServer.new(port => $port) -> $ls {
 
