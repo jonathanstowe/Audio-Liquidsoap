@@ -25,7 +25,8 @@
   "license": "Artistic-2.0",
   "test-depends": [
     "Test",
-    "Test::Util::ServerPort"
+    "Test::Util::ServerPort",
+	"CheckSocket"
   ],
   "provides": {
     "Audio::Liquidsoap": "lib/Audio/Liquidsoap.pm"
