@@ -37,7 +37,7 @@ class RunServer {
     multi method run(RunServer:D:) {
         $!Promise = $!proc.start;
         my $s = self;
-        my $t = signal(SIGINT, SIGHUP).tap({ $t.close; sleep 1; $s.kill });
+        my $t = signal(SIGHUP).tap({ $t.close; sleep 1; $s.kill });
         True;
     }
 
