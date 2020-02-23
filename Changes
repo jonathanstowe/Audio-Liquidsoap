@@ -1,3 +1,7 @@
+v0.0.8		Sun 23 Feb 18:17:44 GMT 2020
+	* Switch to docker for Travis testing
+	* Add missing LICENCE file
+	* Rename Perl 6 → Raku
 v0.0.7		Sat  2 Feb 22:03:27 GMT 2019
 	* Improve stability of tests
 	* Spring clean and add to CPAN

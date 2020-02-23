@@ -24,9 +24,10 @@ class RunServer {
             X::NoSoap.new.throw;
         }
 
-        my $set-port = "set('server.telnet.port',{ $!port })";
+        my $allow-root  =   'set("init.allow_root",true)';
+        my $set-port    =   "set('server.telnet.port',{ $!port })";
 
-        my @args = '--enable-telnet', '--force-start', '--verbose', $set-port, $!script // Empty;
+        my @args = '--enable-telnet', '--force-start', '--verbose',$allow-root,  $set-port, $!script // Empty;
 
         $!proc = Proc::Async.new($!liquidsoap, @args);
         $!stdout = $!proc.stdout;
