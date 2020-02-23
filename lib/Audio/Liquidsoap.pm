@@ -615,7 +615,7 @@ takes care of providing the namespace for the object.
 =end pod
 
 
-class Audio::Liquidsoap:ver<0.0.7>:auth<github:jonathanstowe>:api<1.0> {
+class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
 
     class X::NoServer is Exception {
         has $.port;
@@ -686,6 +686,7 @@ class Audio::Liquidsoap:ver<0.0.7>:auth<github:jonathanstowe>:api<1.0> {
             my Str $out = '';
             self.print: $command ~ "\r\n";
             while my $l = self.recv {
+                say ">> $l";
 	            if $l ~~ /^^END\r\n/ {
 		            last;
 	            }

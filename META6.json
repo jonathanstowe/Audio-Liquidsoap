@@ -1,13 +1,13 @@
 {
   "name": "Audio::Liquidsoap",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "auth": "github:jonathanstowe",
   "api": "1.0",
   "description": "Interact with the Liquidsoap command server",
-  "source-url": "git://github.com/jonathanstowe/Audio-Liquidsoap.git",
+  "source-url": "https://github.com/jonathanstowe/Audio-Liquidsoap.git",
   "support": {
     "email": "jns+git@gellyfish.co.uk",
-    "source": "git://github.com/jonathanstowe/Audio-Liquidsoap.git",
+    "source": "https://github.com/jonathanstowe/Audio-Liquidsoap.git",
     "bugtracker": "https://github.com/jonathanstowe/Audio-Liquidsoap/issues"
   },
   "perl": "6.*",
@@ -33,5 +33,5 @@
   "authors": [
     "Jonathan Stowe <jns+git@gellyfish.co.uk>"
   ],
-  "meta-version": "0"
+  "meta-version": "1"
 }

@@ -39,7 +39,7 @@ if try RunServer.new(port => $port, script => $script.Str) -> $ls {
         else {
             pass "Started the server";
             my $soap;
-            lives-ok { $soap = Audio::Liquidsoap.new(port => $port) }, "get client";
+            lives-ok { $soap = Audio::Liquidsoap.new(port => $port, host => '127.0.0.1') }, "get client";
             my @list;
 
             if $soap.version < v1.2.0 {
