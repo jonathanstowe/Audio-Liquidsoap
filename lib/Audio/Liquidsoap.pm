@@ -686,7 +686,6 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
             my Str $out = '';
             self.print: $command ~ "\r\n";
             while my $l = self.recv {
-                say $l;
 	            if $l ~~ /^^END\r\n/ {
 		            last;
 	            }
