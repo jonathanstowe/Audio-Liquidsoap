@@ -127,6 +127,10 @@
     {
       "name": "Changes",
       "type": "file"
+    },
+    {
+      "name": "LICENCE",
+      "type": "file"
     }
   ],
   "type": "layout"

@@ -36,7 +36,7 @@ for sending arbitrary commands to the server, such as those that may
 have been provided by the liquidsoap C<server.register> function.
 However it should be borne in mind that you will almost certainly need
 to still actually to write some liquidsoap script in order to declare
-the things to manipulate. 
+the things to manipulate.
 
 =head2 Audio::Liquidsoap
 
@@ -267,7 +267,7 @@ servers, encodings or bitrates.  They can all be controlled individually.
 =head3 attribute type
 
 This is the type of the output which may be e.g. "icecast", "alsa" or
-any other configured in the liquidsoap. 
+any other configured in the liquidsoap.
 
 =head3 attribute name
 
@@ -520,7 +520,7 @@ Attempts to start this input returning a Bool to indicate success or otherwise.
     method uri ( --> Str)
 
 This is a read/write method that can be used to get or set the uri that the
-input is being retrieved from. 
+input is being retrieved from.
 
 =head2 Audio::Liquidsoap::Input::Harbor
 
@@ -535,7 +535,7 @@ used for live streams of radio shows from remote sources.
     method kick ( --> Bool)
 
 Attempt to kick (disconnect) the current connected client, returning a Bool to
-indicate success.  
+indicate success.
 
 
 =head2 Audio::Liquidsoap::Playlist
@@ -640,7 +640,7 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
         my $rc = True;
         CATCH {
             when X::NoServer {
-               return False; 
+               return False;
             }
         }
 
@@ -669,7 +669,7 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
 
         has LiquidSock $!socket;
 
-        method socket() returns LiquidSock handles <recv print close> {
+        method socket() returns LiquidSock handles <lines recv print close> {
             CATCH {
                 default {
                     X::NoServer.new(host => $!host, port => $!port, error => $_.message).throw;
@@ -683,19 +683,19 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
         }
 
         method command(Str $command, *@args) {
-            my Str $out = '';
+            my @out;
             self.print: $command ~ "\r\n";
-            while my $l = self.recv {
-	            if $l ~~ /^^END\r\n/ {
-		            last;
-	            }
-                $out ~= $l;
+            for self.lines -> $l {
+                if $l eq 'END' {
+                    last;
+                }
+                @out.append: $l;
             }
             self.close;
-            if $out ~~ /^^ERROR:/ {
+            if @out.grep(/^^ERROR:/ ) -> $out {
                 X::Command.new(error => $out).throw;
             }
-            $out;
+            @out.join("\n");
         }
     }
 
@@ -712,21 +712,21 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
 
     method uptime() returns Duration {
         multi sub get-secs(Str $s) returns Duration {
-	        my regex uptime {
-		        $<day>=[\d+]d\s+$<hour>=[\d+]h\s+$<minute>=[\d+]m\s+$<second>=[\d+]s
-	        }
-	
-	        if $s ~~ /<uptime>/ {
-		        get-secs($/<uptime>);
-	        }
-	        else {
-		        fail "Incorrect format - $s";
-	        }
+            my regex uptime {
+                $<day>=[\d+]d\s+$<hour>=[\d+]h\s+$<minute>=[\d+]m\s+$<second>=[\d+]s
+            }
+
+            if $s ~~ /<uptime>/ {
+                get-secs($/<uptime>);
+            }
+            else {
+                fail "Incorrect format - $s";
+            }
         }
 
         multi sub get-secs(Match $s) returns Duration {
-	        my $secs = ($s<day>.Int * 86400) + ($s<hour>.Int * 3600) + ( $s<minute>.Int * 60) + $s<second>.Int;
-	        Duration.new($secs);	
+            my $secs = ($s<day>.Int * 86400) + ($s<hour>.Int * 3600) + ( $s<minute>.Int * 60) + $s<second>.Int;
+            Duration.new($secs);
         }
 
         my $u = self.command("uptime");
@@ -790,7 +790,7 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
         $val.subst('"', '', :g);
     }
 
-    
+
     method get-var(Str $name) {
         if not %!vars.keys {
             %!vars = self.get-vars();
@@ -913,7 +913,7 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
         multi sub meta-key(Str $key) {
             $key.subst('_', '-');
         }
-        
+
         sub get-metadata-pair(Str $line) {
             my ( $key, $value ) = $line.split('=',2);
             if $key && $value {
@@ -979,7 +979,7 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
         }
     }
 
-    has Request $!requests; 
+    has Request $!requests;
 
     method requests() returns Request {
         if not $!requests.defined {
