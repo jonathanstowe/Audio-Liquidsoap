@@ -1,4 +1,5 @@
 v0.0.8		Sun 23 Feb 18:17:44 GMT 2020
+    * Don't use .recv to get lines
 	* Switch to docker for Travis testing
 	* Add missing LICENCE file
 	* Rename Perl 6 → Raku
