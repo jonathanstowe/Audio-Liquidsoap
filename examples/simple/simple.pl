@@ -1,4 +1,4 @@
-#!/usr/bin/env perl6 
+#!/usr/bin/env raku 
 
 use v6.c;
 
@@ -53,4 +53,4 @@ multi sub MAIN(Str :$host = 'localhost', Int :$port = 1234, Str :$path = '/tmp/i
 
 
 
-# vim: expandtab shiftwidth=4 ft=perl6
+# vim: expandtab shiftwidth=4 ft=raku

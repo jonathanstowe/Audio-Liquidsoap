@@ -2,11 +2,11 @@
 
 Interact with the Liquidsoap telnet interface.
 
-[![Build Status](https://travis-ci.org/jonathanstowe/Audio-Liquidsoap.svg?branch=master)](https://travis-ci.org/jonathanstowe/Audio-Liquidsoap)
+![Build Status](https://github.com/jonathanstowe/Audio-Liquidsoap/workflows/CI/badge.svg)
 
 ## Synopsis
 
-```perl6
+```raku
 
 use Audio::Liquidsoap;
 

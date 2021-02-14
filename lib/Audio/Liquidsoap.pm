@@ -615,7 +615,7 @@ takes care of providing the namespace for the object.
 =end pod
 
 
-class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
+class Audio::Liquidsoap:ver<0.1.0>:auth<github:jonathanstowe>:api<1.0> {
 
     class X::NoServer is Exception {
         has $.port;
@@ -1223,4 +1223,4 @@ class Audio::Liquidsoap:ver<0.0.8>:auth<github:jonathanstowe>:api<1.0> {
     has Playlist    %!playlists;
 }
 
-# vim: expandtab shiftwidth=4 ft=perl6
+# vim: expandtab shiftwidth=4 ft=raku
