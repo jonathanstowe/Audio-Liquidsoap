@@ -55,9 +55,8 @@ then you may be able to install it from [source](http://liquidsoap.info/download
 
 It's written in OCaml and has lots of dependencies that you are unlikely
 to already have but it's doable on most platforms.  Alternatively there is
-a [docker image](https://hub.docker.com/r/savonet/liquidsoap-full).  If you
-want to use that to run the tests, you should look at [.travis.yml](.travis.yml)
-in the repository.
+a [docker image](https://hub.docker.com/repository/docker/jonathanstowe/rakudo-liquidsoap)
+want to use that to run the tests, it is described in the README in the repository.
 
 The tests assume that you have `liquidsoap` installed somewhere in your
 path and will run an instance on an unused port so as not to interfere
@@ -98,5 +97,5 @@ This is free software.
 
 Please see the [LICENCE](LICENCE) file in the distribution
 
-© Jonathan Stowe 2016 - 2020
+© Jonathan Stowe 2016 - 2021
 
