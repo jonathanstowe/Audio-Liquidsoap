@@ -1,9 +1,0 @@
-language: minimal
-  
-services:
-  - docker
-
-install:
-  - docker pull jonathanstowe/rakudo-liquidsoap
-
-script: docker run --entrypoint sh -t -v  $TRAVIS_BUILD_DIR:/home/raku jonathanstowe/rakudo-liquidsoap  -c "zef install --deps-only . && zef test -v --debug ."
