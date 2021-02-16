@@ -48,13 +48,12 @@ objects as necessary.
 
 =head3 method new
 
-    method new(Int :$port = 1234, Str :$host = 'localhost', Client :$client)
+    method new(Str :$socket-path, Int :$port = 1234, Str :$host = 'localhost', Client :$client)
 
-This is the constructor of the class, the host and port of the liquidsoap
+This is the constructor of the class, the host and port or socket path of the liquidsoap
 command interface can be provided and default to 1234 and 'localhost'. A
 client object will be created as necessary but one can be provided if for
-instance one is required with different capabilities (this allows for instance
-for the future addition of a Unix socket interface.)
+instance one is required with different capabilities.
 
 =head3 attribute client
 
@@ -73,6 +72,14 @@ This  is the host that the liquidsoap command interface can be found on.  It
 defaults to 'localhost'.  Typically however a liquidsoap instance will only
 bind to the loopback interface for security reasons so it is unlikely that
 you will need to change it.
+
+=head3 attribute socket-path
+
+If provided this will be the path to a Unix domain socket which will be
+used to communicate with the Liquidsoap server rather than the TCP "telnet"
+socket.  This should be preferred to using a TCP socket in a production
+environment as it is easier to secure (by adjusting the permissions on
+the socket file.)
 
 =head3 method command
 
@@ -615,14 +622,20 @@ takes care of providing the namespace for the object.
 =end pod
 
 
-class Audio::Liquidsoap:ver<0.1.0>:auth<github:jonathanstowe>:api<1.0> {
+class Audio::Liquidsoap:ver<0.1.1>:auth<github:jonathanstowe>:api<1.0> {
 
     class X::NoServer is Exception {
         has $.port;
         has $.host;
+        has Str $.socket-path;
         has $.error;
         method message() {
-            "Cannot connect on { $!host }:{ $!port } : { $!error }";
+            if $!socket-path.defined {
+                "Cannot connect on { $!socket-path } : { $!error }";
+            }
+            else {
+                "Cannot connect on { $!host }:{ $!port } : { $!error }";
+            }
         }
     }
 
@@ -652,6 +665,7 @@ class Audio::Liquidsoap:ver<0.1.0>:auth<github:jonathanstowe>:api<1.0> {
     class Client {
         has Int $.port  = 1234;
         has Str $.host  = 'localhost';
+        has Str $.socket-path;
 
         my role LiquidSock {
             has Bool $.closed;
@@ -672,12 +686,17 @@ class Audio::Liquidsoap:ver<0.1.0>:auth<github:jonathanstowe>:api<1.0> {
         method socket() returns LiquidSock handles <lines recv print close> {
             CATCH {
                 default {
-                    X::NoServer.new(host => $!host, port => $!port, error => $_.message).throw;
+                    X::NoServer.new(socket-path => $!socket-path, host => $!host, port => $!port, error => $_.message).throw;
                 }
             }
 
             if not ( $!socket.defined && $!socket.opened) {
-                $!socket = IO::Socket::INET.new(host => $!host, port => $!port) but LiquidSock;
+                if $!socket-path.defined {
+                    $!socket = IO::Socket::INET.new(host => $!socket-path, port => 0, family => PF_UNIX) but LiquidSock;
+                }
+                else {
+                    $!socket = IO::Socket::INET.new(host => $!host, port => $!port, family => PF_INET) but LiquidSock;
+                }
             }
             $!socket;
         }
@@ -702,10 +721,11 @@ class Audio::Liquidsoap:ver<0.1.0>:auth<github:jonathanstowe>:api<1.0> {
     has Client $.client;
     has Int $.port = 1234;
     has Str $.host = 'localhost';
+    has Str $.socket-path;
 
     method command(Str $command, *@args) {
         if not $!client.defined {
-            $!client = Client.new(host => $!host, port => $!port);
+            $!client = Client.new(socket-path => $!socket-path, host => $!host, port => $!port);
         }
         $!client.command($command, @args);
     }

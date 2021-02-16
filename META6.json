@@ -1,6 +1,6 @@
 {
   "name": "Audio::Liquidsoap",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "auth": "github:jonathanstowe",
   "api": "1.0",
   "description": "Interact with the Liquidsoap command server",
@@ -26,7 +26,7 @@
   "test-depends": [
     "Test",
     "Test::Util::ServerPort",
-	 "CheckSocket"
+	 "CheckSocket:ver<0.0.8+>"
   ],
   "provides": {
     "Audio::Liquidsoap": "lib/Audio/Liquidsoap.pm"

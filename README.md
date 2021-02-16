@@ -29,20 +29,18 @@ with it.
 
 It provides abstractions to interact with the defined Inputs, Outputs,
 Queues, Playlists and Requests to the extent allowed by the "telnet"
-interface of `liquidsoap`.  There is also a generalised mechanism
-for sending arbitrary commands to the server, such as those that may
-have been provided by the liquidsoap `server.register` function.
+or "socket" interface of `liquidsoap`.  There is also a generalised
+mechanism for sending arbitrary commands to the server, such as those
+that may have been provided by the liquidsoap `server.register` function.
 However it should be borne in mind that you will almost certainly need
-to still actually write some liquidsoap script in order to declare
-the things to manipulate. 
+to still actually write some liquidsoap script in order to declare the
+things to manipulate.
 
-Currently this only supports a TCP connection to the liquidsoap command
-server as Raku does not currently support Unix domain sockets, so you
-may need to use something like `netcat` to provide a proxy if you
-want to work with an existing installation that provides a server for
-Unix domain sockets. This should be remedied in a future release of Rakudo.
-However, because of this, you should stay aware of the security implications
-of having what is basically an unauthenticated network service exposed to the internet,
+This supports both the "telnet" (TCP) and "socket" (Unix domain socket,)
+server interfaces which can be configured as described in [the Liquidsoap
+settings](https://www.liquidsoap.info/doc-1.4.3/settings.html#server-configuration).
+The Unix domain socket interface is to be preferred for production use
+as there is no authentication on the server interface.
 
 ## Installation
 
