@@ -89,6 +89,10 @@
           "name": "030-builtins.t",
           "type": "file"
         },
+		{
+		  "name" : "040-builtins-unix.t",
+          "type" : "file"
+		},
         {
           "name": "010-use.t",
           "type": "file"
