@@ -803,7 +803,7 @@ class Audio::Liquidsoap:ver<0.1.1>:auth<github:jonathanstowe>:api<1.0> {
     }
 
     multi sub get-val($val, Numeric) returns Rat {
-        Rat($val);
+        Rat($val.subst(/'.'$/,''));
     }
 
     multi sub get-val($val, Str) returns Str {
@@ -1208,16 +1208,18 @@ class Audio::Liquidsoap:ver<0.1.1>:auth<github:jonathanstowe>:api<1.0> {
     }
 
     method !get-items() {
+        say self.list.perl;
         for self.list -> $item-line {
             my ($name, $type)  = $item-line.split(/\s+\:\s+/);
             given $type {
-                when 'queue' {
+                when 'queue'|'request.queue' {
                     %!queues{$name} = Queue.new(name => $name, client => $!client);
-
                 }
                 when 'playlist' {
                     %!playlists{$name} = Playlist.new(name => $name, client => $!client);
-
+                }
+                when 'request.dynamic.list' {
+                    %!playlists{$name} = Playlist.new(name => $name, client => $!client);
                 }
                 when /^output/ {
                     my $st = $_.split('.')[1];
@@ -1231,7 +1233,7 @@ class Audio::Liquidsoap:ver<0.1.1>:auth<github:jonathanstowe>:api<1.0> {
                     # do nothing but want to know when we really get one we don't know about
                 }
                 default {
-                    warn "unknown item type '$type'";
+                    warn "unknown item type '$type' for '$name'" if $*LIQUIDSOAP-DEBUG;
                 }
             }
 

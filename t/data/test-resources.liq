@@ -13,13 +13,13 @@ infloat  = interactive.float("infloat",1.0)
 
 default = playlist(id="default-playlist","t/data/play")
 
-outblank = blank()
+outblank = blank(id="blanky")
 
 incoming = request.queue(id="incoming")
 
 live = input.harbor("live-source", id="live-source", port=9878)
 
-relay = input.http("http://stream.futuremusic.fm:8000/mp3", id="relay-source", autostart=false)
+relay = input.http("http://stream.futuremusic.fm:8000/mp3", id="relay-source")
 
 radio = fallback(track_sensitive=false,[live, relay, incoming, default, outblank])
 
