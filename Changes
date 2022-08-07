@@ -1,3 +1,5 @@
+v0.1.2	Sun  7 Aug 09:43:04 BST 2022
+	* Upload to zef repository
 v0.1.1		Tue 16 Feb 14:32:20 GMT 2021
 	* Support for Unix domain sockets
 v0.1.0		Sun 14 Feb 20:53:48 GMT 2021
@@ -22,3 +24,4 @@ v0.0.2		Tue Feb 16 16:38:55 2016 +0000
 	* Had omitted a test dependency
 v0.0.1		Sun Feb 14 23:23:00 2016 +0000 
 	* Initial release
+
